@@ -1,0 +1,65 @@
+[project]
+name = "aicore"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.116.1",
+    "fastmcp>=2.11.2",
+    "mitexlab-instagrammcp",
+    "mitexlab-whatsappmcp",
+    "mitex-mailer-mcp",
+    "pydantic>=2.11.7",
+    "pydantic-ai>=0.6.0",
+    "watchdog>=6.0.0",
+    "websockets<14.0",
+    "mitexlab-googlemcp",
+    "redisvl>=0.8.2",
+]
+
+# [project.scripts]
+# dev = "src.main:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.17.1",
+]
+
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+disable_error_code = ["no-untyped-def", "attr-defined", "var-annotated", "no-any-return", "import-untyped", "unused-ignore", "union-attr"]
+
+[tool.uv.sources]
+mitexlab-instagrammcp = { git = "https://github.com/oguntoye/mitexlab_instagrammcp.git" }
+mitexlab-whatsappmcp = { git = "https://github.com/oguntoye/mitexlab_whatsappmcp.git" }
+mitexlab-googlemcp = { git = "https://github.com/oguntoye/mitexlab_googlemcp.git" }
+mitex-mailer-mcp = { git = "https://github.com/oguntoye/mitex_mailer_mcp.git" }
+
+
+[[tool.mypy.overrides]]
+module = "mitexlab_googlemcp.*"
+ignore_missing_imports = true
+
+
+# uv run mypy src      
+# uv sync 
+# uv lock --upgrade-package mitexlab_googlemcp && uv sync
+# uv lock --upgrade-package mitexlab_aiexecutormcp && uv sync
+# uv lock --upgrade-package mitexlab_instagrammcp && uv sync
+# uv lock --upgrade-package mitexlab_whatsappmcp && uv sync
+# uv lock --upgrade-package mitex_mailer_mcp && uv sync
+# uv add redisvl mem0ai
