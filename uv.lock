@@ -1239,7 +1239,7 @@ dependencies = [
 [[package]]
 name = "mitexlab-googlemcp"
 version = "0.1.0"
-source = { git = "https://github.com/oguntoye/mitexlab_googlemcp.git#a7acfffcdb72ecb52337ca8748b2ea3c8040552c" }
+source = { git = "https://github.com/oguntoye/mitexlab_googlemcp.git#7cf3c49ca7c912e92da3a2fbcb0e59ab62929348" }
 dependencies = [
     { name = "fastapi" },
     { name = "fastmcp" },
