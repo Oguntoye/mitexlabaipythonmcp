@@ -1220,7 +1220,7 @@ wheels = [
 [[package]]
 name = "mitex-mailer-mcp"
 version = "0.1.1"
-source = { git = "https://github.com/oguntoye/mitex_mailer_mcp.git#11e40c01cb8258fca9109a9ab903f0520e0db211" }
+source = { git = "https://github.com/oguntoye/mitex_mailer_mcp.git#b6bb899c59de9be3f88bd7b3752d4ab2fbce1879" }
 dependencies = [
     { name = "aiohttp" },
     { name = "aioimaplib" },
@@ -1256,7 +1256,7 @@ dependencies = [
 [[package]]
 name = "mitexlab-instagrammcp"
 version = "0.1.0"
-source = { git = "https://github.com/oguntoye/mitexlab_instagrammcp.git#b92901c921ad02d19b6aaa83824305275e54ef01" }
+source = { git = "https://github.com/oguntoye/mitexlab_instagrammcp.git#7370ddc4d5e47adba7e8b99705d37a84ac143dd5" }
 dependencies = [
     { name = "aiofiles" },
     { name = "aiohttp" },
@@ -1275,7 +1275,7 @@ dependencies = [
 [[package]]
 name = "mitexlab-whatsappmcp"
 version = "0.1.0"
-source = { git = "https://github.com/oguntoye/mitexlab_whatsappmcp.git#9fa5e7e1435746e6d8a06d6da85fda7f55697fb8" }
+source = { git = "https://github.com/oguntoye/mitexlab_whatsappmcp.git#d77192cc51a55a3de781058582d0ffb9e112db59" }
 dependencies = [
     { name = "aiofiles" },
     { name = "aiohttp" },
