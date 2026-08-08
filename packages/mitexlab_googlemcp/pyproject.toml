@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[project]
+name = "mitexlab_googlemcp"
+version = "0.1.0"
+description = "Mitexlab Google MCP"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.116.0",
+    "fastmcp>=2.11.2",
+    "google-api-python-client>=2.176.0",
+    "google-auth-httplib2>=0.2.0",
+    "google-auth-oauthlib>=1.2.2",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "pyjwt>=2.10.1",
+    "redis>=6.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "mypy>=1.17.0",
+    "pytest>=8.4.1",
+]
+
+
+[tool.mypy]
+exclude = [
+    ".*\\.pyi$"
+]
+python_version = "3.11"
+disable_error_code = ["var-annotated", "import-untyped", "call-overload", "misc", "assignment", "arg-type", "call-arg", "attr-defined"]
+
+# uv run mypy src      
+# uv sync 
+# uv lock --upgrade-package mitext-google-mcp-python && uv sync
+# uv run --with mypy stubgen src/mitexlab_googlemcp -o src/

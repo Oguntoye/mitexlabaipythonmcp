@@ -45,7 +45,8 @@ def main():
     # Setup file watcher
     event_handler = RestartHandler(runner.start_server)
     observer = Observer()
-    observer.schedule(event_handler, "src", recursive=True)
+    for watch_dir in ("src", "packages"):
+        observer.schedule(event_handler, watch_dir, recursive=True)
     observer.start()
     
     try:

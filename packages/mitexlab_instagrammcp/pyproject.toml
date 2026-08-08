@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[project]
+name = "mitexlab-instagrammcp"
+version = "0.1.0"
+description = "Mitexlab Instagram MCP"
+requires-python = ">=3.13"
+dependencies = [
+    "aiofiles>=24.1.0",
+    "aiohttp>=3.12.15",
+    "asyncio-throttle>=1.0.2",
+    "fastapi>=0.116.1",
+    "fastmcp>=2.11.3",
+    "httpx>=0.28.1",
+    "pillow>=11.3.0",
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "python-multipart>=0.0.20",
+    "redis>=6.4.0",
+    "requests>=2.32.5",
+]
+
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "mypy>=1.17.0",
+    "pytest>=8.4.1",
+]
+
+[tool.mypy]
+exclude = [
+    ".*\\.pyi$"
+]
+python_version = "3.11"
+disable_error_code = ["var-annotated", "import-untyped", "call-overload", "misc", "assignment", "arg-type", "call-arg", "attr-defined"]

@@ -43,23 +43,33 @@ warn_unreachable = true
 strict_equality = true
 disable_error_code = ["no-untyped-def", "attr-defined", "var-annotated", "no-any-return", "import-untyped", "unused-ignore", "union-attr"]
 
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+    "packages/mitexlab_instagrammcp",
+    "packages/mitexlab_whatsappmcp",
+    "packages/mitexlab_googlemcp",
+    "packages/mitex_mailer_mcp",
+]
+
 [tool.uv.sources]
-mitexlab-instagrammcp = { git = "https://github.com/oguntoye/mitexlab_instagrammcp.git" }
-mitexlab-whatsappmcp = { git = "https://github.com/oguntoye/mitexlab_whatsappmcp.git" }
-mitexlab-googlemcp = { git = "https://github.com/oguntoye/mitexlab_googlemcp.git" }
-mitex-mailer-mcp = { git = "https://github.com/oguntoye/mitex_mailer_mcp.git" }
+mitexlab-instagrammcp = { workspace = true }
+mitexlab-whatsappmcp = { workspace = true }
+mitexlab-googlemcp = { workspace = true }
+mitex-mailer-mcp = { workspace = true }
 
 
 [[tool.mypy.overrides]]
-module = "mitexlab_googlemcp.*"
+module = [
+    "mitexlab_googlemcp.*",
+    "mitexlab_instagrammcp.*",
+    "mitexlab_whatsappmcp.*",
+    "mitex_mailer_mcp.*",
+]
 ignore_missing_imports = true
 
 
-# uv run mypy src      
-# uv sync 
-# uv lock --upgrade-package mitexlab_googlemcp && uv sync
-# uv lock --upgrade-package mitexlab_aiexecutormcp && uv sync
-# uv lock --upgrade-package mitexlab_instagrammcp && uv sync
-# uv lock --upgrade-package mitexlab_whatsappmcp && uv sync
-# uv lock --upgrade-package mitex_mailer_mcp && uv sync
-# uv add redisvl mem0ai
+# uv run mypy src
+# uv sync

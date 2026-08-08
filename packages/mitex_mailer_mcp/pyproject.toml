@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[project]
+name = "mitex-mailer-mcp"
+version = "0.1.1"
+description = "Add your description here"
+readme = "README.md"
+authors = [{ name = "Daniel Brai", email = "danielbrai.dev@gmail.com" }]
+requires-python = ">=3.13"
+dependencies = [
+    "emails>=0.6",
+    "fastmcp>=2.11.3",
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "redis>=6.4.0",
+    "aioimaplib>=1.1.0",
+    "aiosmtplib>=3.0.2",
+    "python-dotenv>=1.0.0",
+    "jinja2>=3.1.6",
+    "inflection>=0.5.1",
+    "fastapi>=0.116.1",
+    "aiohttp>=3.12.15",
+]
+
+# [build-system]
+# requires = ["uv_build>=0.8.8,<0.9.0"]
+# build-backend = "uv_build"
+
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "mypy>=1.17.0",
+    "pytest>=8.4.1",
+]
+
+[tool.mypy]
+exclude = [
+    ".*\\.pyi$"
+]
+python_version = "3.11"
+disable_error_code = ["var-annotated", "import-untyped", "call-overload", "misc", "assignment", "arg-type", "call-arg", "attr-defined"]

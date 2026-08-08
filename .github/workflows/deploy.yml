@@ -1,0 +1,97 @@
+name: CI/CD Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      DEPLOY_DIR: mitexlabaipythonmcp
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --frozen --no-dev
+
+      - name: Type check
+        run: uv run mypy src
+
+      - name: Archive source
+        run: |
+          zip -r deploy.zip . \
+            -x ".git/*" \
+            -x ".venv/*" \
+            -x ".mypy_cache/*" \
+            -x "**/__pycache__/*" \
+            -x "**/*.pyc" \
+            -x "private_token.txt"
+
+      - name: Set release id
+        run: echo "RELEASE_ID=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
+
+      - name: Copy artifact to VPS
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deployer
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          source: deploy.zip
+          target: "~/apps/${{ env.DEPLOY_DIR }}/releases/${{ env.RELEASE_ID }}"
+
+      - name: Deploy on VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deployer
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            APP_ROOT=~/apps/${{ env.DEPLOY_DIR }}
+            RELEASE_DIR="$APP_ROOT/releases/${{ env.RELEASE_ID }}"
+
+            cd "$RELEASE_DIR"
+            unzip -o deploy.zip
+            rm deploy.zip
+
+            export PATH="$HOME/.local/bin:$PATH"
+            if ! command -v uv >/dev/null; then
+              curl -LsSf https://astral.sh/uv/install.sh | sh
+              export PATH="$HOME/.local/bin:$PATH"
+            fi
+
+            uv sync --frozen --no-dev
+
+            ln -sf "$APP_ROOT/shared/.env" .env
+            ln -sfn "$RELEASE_DIR" "$APP_ROOT/current"
+
+            cd "$APP_ROOT/current"
+
+            pm2 reload "${{ env.DEPLOY_DIR }}" --update-env || \
+              pm2 start ~/ecosystem.config.js --only "${{ env.DEPLOY_DIR }}"
+            pm2 save
+
+            sleep 3
+            STATUS=$(pm2 jlist | jq -r --arg name "${{ env.DEPLOY_DIR }}" '.[] | select(.name==$name) | .pm2_env.status')
+            if [ "$STATUS" != "online" ]; then
+              echo "App failed to start (status: $STATUS)"
+              exit 1
+            fi
+
+            MCPPORT=$(grep -E '^MCPPORT=' .env | cut -d= -f2 | tr -d '"' | tr -d "'")
+            curl -f "http://localhost:${MCPPORT}/health" || (echo "Health check failed" && exit 1)
+
+            cd "$APP_ROOT/releases"
+            ls -1t | tail -n +4 | xargs -r rm -rf
