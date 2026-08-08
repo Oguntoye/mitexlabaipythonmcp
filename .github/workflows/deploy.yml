@@ -83,7 +83,6 @@ jobs:
               pm2 start ~/ecosystem.config.js --only "${{ env.DEPLOY_DIR }}"
             pm2 save
 
-            sleep 3
             STATUS=$(pm2 jlist | jq -r --arg name "${{ env.DEPLOY_DIR }}" '.[] | select(.name==$name) | .pm2_env.status')
             if [ "$STATUS" != "online" ]; then
               echo "App failed to start (status: $STATUS)"
@@ -91,7 +90,18 @@ jobs:
             fi
 
             MCPPORT=$(grep -E '^MCPPORT=' .env | cut -d= -f2 | tr -d '"' | tr -d "'")
-            curl -f "http://localhost:${MCPPORT}/health" || (echo "Health check failed" && exit 1)
+            for i in $(seq 1 30); do
+              if curl -sf "http://localhost:${MCPPORT}/health" > /dev/null; then
+                echo "Health check passed"
+                break
+              fi
+              if [ "$i" -eq 30 ]; then
+                echo "Health check failed after 30s"
+                exit 1
+              fi
+              echo "Waiting for server... attempt $i/30"
+              sleep 1
+            done
 
             cd "$APP_ROOT/releases"
             ls -1t | tail -n +4 | xargs -r rm -rf
