@@ -1,7 +1,5 @@
 import json
-import asyncio
-from typing import Optional
-from fastapi import FastAPI, HTTPException
+import logging
 import time
 
 from ..core.api import  InstagramAPI
@@ -9,8 +7,9 @@ from ..core.constants import REDIS_OAUTH_CRED_PREFIX
 from ..server import server
 from ..core.redis import redis_client
 from ..core.helper import getaccesstoken
-from urllib.parse import urlencode, parse_qs, urlparse
+from urllib.parse import urlencode
 
+logger = logging.getLogger(__name__)
 
 
 @server.tool()
@@ -82,13 +81,12 @@ async def exchange_code_for_token(
                 raise ValueError("Invalid client instantiated")
         
             short_token_response = await igclientinstance.exchange_code_for_token(code=code, redirect_uri=redirect_uri)
-            print(f"short_token_response: {short_token_response}")
+            logger.debug("Instagram short-lived token exchange completed")
 
             if not short_token_response or "access_token" not in short_token_response:
                 return { "success": False,"message": "error occurred! unable to generate slt" }
             
             shorttoken = short_token_response["access_token"]
-            print(f"shorttoken: {shorttoken}")
 
             long_token_response = await igclientinstance.get_long_lived_token(short_lived_token=shorttoken)
 
@@ -107,10 +105,6 @@ async def exchange_code_for_token(
             profiledetails = await reqigcl.get_user_profile()
             if not profiledetails or "username" not in profiledetails:
                 return { "success": False,"message": "error occurred! unable to generate ppdetails" }   
-
-        print(f"\n\nshort_token_response: {short_token_response}")
-        print(f"\nlong_token_response: {long_token_response}")
-        print(f"\nprofiledetails: {profiledetails}")  
 
         profileusername = profiledetails["username"]
         profileuserid = profiledetails["user_id"]
@@ -151,13 +145,14 @@ async def exchange_code_for_token(
         await redis_client.set(key1, json.dumps(credentials_dict))
         await redis_client.set(key2, json.dumps(credentials_dict))
 
-        return { "success": True, "message": "Authentication successful",
+        return {
+            "success": True,
+            "message": "Authentication successful",
             "data": {
                 "user_id": profileusername,
                 "profileuserid": profileuserid,
-                "credentials_dict": credentials_dict,
-                "state": session_id
-            }
+                "state": session_id,
+            },
         }
     
     except Exception as e:
@@ -186,7 +181,6 @@ async def test_connection(
                 raise ValueError("Invalid client instantiated")
 
             result = await instagram_api.test_connection()
-            print(f"result: {result}")
         if not result:
             raise ValueError(f"Failed to test_connection")
             
@@ -197,38 +191,3 @@ async def test_connection(
         )
     except Exception as e:
         raise ValueError(f"error-test_connection: {str(e)}")
-
-
-
-async def quickie():
-    # reuslt = await test_connection(
-    #     username="rankloid_",
-    # )
-    # print(f"reusltdd: {reuslt}")
-
-    result = await get_login_url(
-        app_id="[REDACTED]",
-        app_secret="[REDACTED]",
-        redirect_uri="https://REDACTED.ngrok-free.app/api/appcore/util/oauthcallback_ignenc_unauth",
-        session_id="1234567890000126789"
-    )
-    print(f"reusltdd: {result}")
-
-if __name__ == "__main__":
-    asyncio.run(quickie())
-
-
-# app = FastAPI(title="Instagram API FastMCP", version="1.0.0")
-# @app.get("/auth/callback")
-# async def instagram_callback(code: str, state: str = None, error: str = None):
-#     """Handle Instagram OAuth callback"""
-
-#     print(f"code: {code}\n")
-#     print(f"state: {state}\n")
-
-#     if error:
-#         raise HTTPException(status_code=400, detail=f"OAuth error: {error}")
-    
-#     result = await exchange_code_for_token(code=code, session_id="session1")
-#     print(f"result: {result}")
-#     return result["message"]

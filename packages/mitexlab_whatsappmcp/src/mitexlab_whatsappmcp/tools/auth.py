@@ -1,8 +1,7 @@
-import asyncio
 import json
+import logging
 import time
 from typing import Any, Dict
-from unittest import result
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api 
@@ -14,6 +13,8 @@ from ..core.helper import get_access_token, get_business_account_id, get_whatsap
 from ..core.redis import redis_client
 from ..server import server
 from ..env import settings
+
+logger = logging.getLogger(__name__)
 
 
 @server.tool()
@@ -34,7 +35,7 @@ async def complete_whatsapp_signup(
         async with httpx.AsyncClient() as client:
             token_response = await client.get(token_url, timeout=30.0)
             token_data = token_response.json()
-        print(f"\ntoken_data1: {token_data}")
+        logger.debug("WhatsApp token exchange completed")
 
         if 'error' in token_data:
             return {
@@ -215,7 +216,7 @@ async def complete_whatsapp_signup(
                         "expires_at": token_validity_data.get('data', {}).get('expires_at', 0)
                     }
                 }
-                print(f"tokenvaliddityresult: {tokenvaliddityresult}")
+                logger.debug("WhatsApp token validity check completed")
                 
                 # Prepare token expiry info
                 expires_at = tokenvaliddityresult["data"]["expires_at"]
@@ -225,7 +226,7 @@ async def complete_whatsapp_signup(
                 else:
                     expires_at_value = expires_at  # Store the Unix timestamp
         except Exception as e:
-            print(f"\nError during token validity check: {str(e)}")
+            logger.exception("Error during WhatsApp token validity check")
             return {
                 "success": False,
                 "message": f"Token validity check failed: {str(e)}",
@@ -369,7 +370,7 @@ async def setup_whatsapp_credentials(
                 app_id=app_id, 
                 app_secret=app_secret
             )
-            print(f"tokenvaliddityresult: {tokenvaliddityresult}")
+            logger.debug("WhatsApp token validity check completed")
             
             # Prepare token expiry info
             expires_at = tokenvaliddityresult["data"]["expires_at"]
@@ -477,15 +478,3 @@ async def test_whatsapp_connection(
             "message": f"Connection test error: {str(e)}",
             "data": None,
         }
-    
-
-
-
-# async def quickie():
-#     result = await complete_whatsapp_signup(
-#         cloudinaryurl="[REDACTED]",
-#         code="AQAQY9XQvCrTbHgOH1AZ8IBY642f1zVtrAY0WuTjIeoGBBXbfRfMkHRyJhsxcM3nLEQtYrc0NJzOLcOhIj9p4Eu96bh7vj8OIpCrM4bHX4Di1XRPQtqvWE4iJJGuVZjnsnvfz7akWkbIlIZuDgnI11hQILfdqUTwOAeOQczwSmVVd0Aedsa5OT6D4GMTPCjxHyZ7Wm7bPMeFFqflycvqHPz4Own3M3_rZ-fangUkkBkm6A98PdMMjVadVw_F61NjOV2Evz1spW9mM_E8Cxh7MYlYpcGRVcrQ-HQKrG0ENjjv7CzwhoV-suYo4MRNe3ENT7ofLNIQ1SciMadOGme93A0PtwrMtDAYU3yMnyEqGq90WjwCHNPKY8HvvV1mP8M09r_qtz9yLzdxQ_Q0mbpC0q88yAoQoDBQGGFe0o4gdKlBAr-Ne7mwYEHg_rWngx1Ljvo"
-#     )
-#     print(f"result: {result}")
-# if __name__ == "__main__":
-#     asyncio.run(quickie())

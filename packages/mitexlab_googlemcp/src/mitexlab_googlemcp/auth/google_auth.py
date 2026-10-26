@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Any, Dict, List, Literal, Optional, Tuple
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -10,6 +11,8 @@ from httpx import Request
 from ..core.redis import redis_client
 from ..auth.scopes import REDIS_OAUTH_CRED_PREFIX
 from googleapiclient.errors import HttpError
+
+logger = logging.getLogger(__name__)
 
 
 def create_oauth_flow(
@@ -96,7 +99,7 @@ async def start_auth_flow(
         return "\n".join(message_lines)
     except Exception as e:
         error_text = f"Could not initiate authentication for {user_display_name} due to an unexpected error: {str(e)}"
-        print(f"Failed to start the OAuth flow for {user_display_name}: {e}")
+        logger.exception("Failed to start Google OAuth flow for %s", user_display_name)
         raise Exception(error_text)
 
 
@@ -110,10 +113,7 @@ def handle_auth_callback(
         query_params = parse_qs(parsed_url.query)
         state = query_params.get("state", [None])[0]
 
-        print(f"authorization_response: {authorization_response}")
-        print(f"parsed_url: {parsed_url}")
-        print(f"query_params: {query_params}")
-        print(f"state: {state}")
+        logger.debug("Google OAuth callback received state=%s", state)
 
         if not state:
             raise ValueError("OAuth state not found in authorization response.")
@@ -137,12 +137,13 @@ def handle_auth_callback(
         # Use scopes from session data (source of truth)
         scopes = session_data.get("scopes", [])
 
-        print(f"session_id: {session_id}")
-        print(f"client_id: {client_id}")
-        print(f"client_secret: {'*' * len(client_secret) if client_secret else None}")
-        print(f"redirect_uri: {redirect_uri}")
-        print(f"scopes: {scopes}")
-        print(f"code_verifier present: {bool(code_verifier)}")
+        logger.debug(
+            "Google OAuth callback for session_id=%s redirect_uri=%s scopes=%s pkce=%s",
+            session_id,
+            redirect_uri,
+            scopes,
+            bool(code_verifier),
+        )
 
         if not all([client_id, client_secret, redirect_uri]):
             raise ValueError("Client ID, Client Secret, or Redirect URI are missing in session data.")
@@ -161,7 +162,7 @@ def handle_auth_callback(
 
         flow.fetch_token(**fetch_kwargs)
         credentials = flow.credentials
-        print("Successfully exchanged authorization code for tokens.")
+        logger.info("Google authorization code exchanged for tokens")
 
         if not credentials.client_id and client_id:
             credentials.client_id = client_id
@@ -173,7 +174,7 @@ def handle_auth_callback(
             raise ValueError("Failed to get user email for identification.")
 
         user_google_email = user_info["email"]
-        print(f"Identified user_google_email: {user_google_email}\n\n")
+        logger.info("Google OAuth completed for user=%s", user_google_email)
 
         credentials_dict = {
             'token': credentials.token,
@@ -192,7 +193,7 @@ def handle_auth_callback(
         return user_google_email, credentials, credentials_dict
 
     except Exception as e:
-        print(f"Error handling auth callback: {e}")
+        logger.exception("Error handling Google auth callback")
         raise
 
 
@@ -202,15 +203,12 @@ def get_credentials(
 ) -> Optional[Credentials]:
 
     key = f"{REDIS_OAUTH_CRED_PREFIX}{user_google_email}"
-    print(f"key-hhupt: {key}")
 
     statedata = redis_client.get(key)
-    print(f"statedata: {statedata}")
     if not statedata:
         return None
 
     credentials_dict = json.loads(statedata)
-    print(f"credentials_dict: {credentials_dict}")
 
     credentials = Credentials(
         token=credentials_dict.get('token'),
@@ -221,24 +219,26 @@ def get_credentials(
         scopes=credentials_dict.get('scopes')
     )
 
-    print(f"credentials-hh: {credentials}")
-
     if not credentials:
         return None
 
     if not all(scope in (credentials.scopes or []) for scope in required_scopes):
-        print(f"Credentials lack required scopes. Need: {required_scopes}, Have: {credentials.scopes}. User: {user_google_email}")
+        logger.warning(
+            "Google credentials lack scopes for user=%s need=%s have=%s",
+            user_google_email,
+            required_scopes,
+            credentials.scopes,
+        )
         return None
 
     if credentials.valid:
-        print(f"\n\nCredentials are valid. User: '{user_google_email}\n\n")
         return credentials
 
     elif credentials.expired and credentials.refresh_token:
-        print(f"Credentials expired. Attempting refresh. User: '{user_google_email}")
+        logger.info("Refreshing expired Google credentials for user=%s", user_google_email)
         try:
             credentials.refresh(Request())
-            print(f"Credentials refreshed successfully. User: {user_google_email}")
+            logger.info("Google credentials refreshed for user=%s", user_google_email)
 
             credentials_dict = {
                 'token': credentials.token,
@@ -252,37 +252,35 @@ def get_credentials(
             redis_client.set(key, json.dumps(credentials_dict))
             return credentials
         except RefreshError as e:
-            print(f"RefreshError - token expired/revoked: {e}. User: '{user_google_email}")
+            logger.warning("Google refresh token revoked for user=%s: %s", user_google_email, e)
             return None
         except Exception as e:
-            print(f"Error refreshing credentials: {e}. User: {user_google_email}")
+            logger.error("Error refreshing Google credentials for user=%s: %s", user_google_email, e)
             return None
     else:
-        print(f"Credentials invalid/cannot refresh. Valid: {credentials.valid}, Refresh Token: {credentials.refresh_token is not None}. User: '{user_google_email}")
+        logger.warning(
+            "Google credentials invalid for user=%s valid=%s has_refresh=%s",
+            user_google_email,
+            credentials.valid,
+            credentials.refresh_token is not None,
+        )
         return None
 
 
 def get_user_info(credentials: Credentials) -> Optional[Dict[str, Any]]:
-    print(f"\n\ncredentials: {credentials}")
-    print(f"Token: {credentials.token}")
-    print(f"Refresh token: {credentials.refresh_token}")
-    print(f"Client ID: {credentials.client_id}")
-    print(f"Expiry: {credentials.expiry}")
-    print(f"Scopes: {credentials.scopes}")
-
     if not credentials or not credentials.valid:
-        print("Cannot get user info: Invalid or missing credentials.")
+        logger.debug("Cannot get Google user info: invalid credentials")
         return None
     try:
         service = build("oauth2", "v2", credentials=credentials)
         user_info = service.userinfo().get().execute()
-        print(f"Successfully fetched user info: {user_info.get('email')}")
+        logger.debug("Fetched Google user info for email=%s", user_info.get("email"))
         return user_info
     except HttpError as e:
-        print(f"HttpError fetching user info: {e.status_code} {e.reason}")
+        logger.warning("HttpError fetching Google user info: %s %s", e.status_code, e.reason)
         return None
     except Exception as e:
-        print(f"Unexpected error fetching user info: {e}")
+        logger.exception("Unexpected error fetching Google user info")
         return None
 
 
@@ -302,7 +300,7 @@ async def get_authenticated_google_service(
 
     if not user_google_email or "@" not in user_google_email:
         error_msg = f"Authentication required for {tool_name} service: {service_name}. No valid 'user_google_email' provided."
-        print(f"get_authenticated_google_service-err: {error_msg}")
+        logger.warning("%s", error_msg)
         raise GoogleAuthenticationError(error_msg)
 
     credentials = await asyncio.to_thread(
@@ -316,9 +314,14 @@ async def get_authenticated_google_service(
 
     try:
         service = build(service_name, version, credentials=credentials)
-        print(f"[{tool_name}] Successfully authenticated {service_name} service for user: {user_google_email}")
+        logger.debug(
+            "[%s] Authenticated %s for user=%s",
+            tool_name,
+            service_name,
+            user_google_email,
+        )
         return service, user_google_email
     except Exception as e:
         error_msg = f"[{tool_name}] Failed to build {service_name} service: {str(e)}"
-        print(f"get_authenticated_google_service_error: {error_msg}")
+        logger.exception("%s", error_msg)
         raise GoogleAuthenticationError(error_msg)

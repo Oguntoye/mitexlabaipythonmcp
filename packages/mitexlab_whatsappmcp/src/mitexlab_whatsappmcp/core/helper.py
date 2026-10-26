@@ -1,10 +1,12 @@
 import json
+import logging
 import time
 import httpx
 from ..core.api import WhatsAppAPI
 from ..core.constants import REDIS_OAUTH_CRED_PREFIX, WA_API_VERSION, WA_GRAPH_API_URL
 from ..core.redis import redis_client
-import time
+logger = logging.getLogger(__name__)
+
 
 def normalize_phone(phone: str) -> str:
     """Remove spaces, plus signs, and trim whitespace"""
@@ -26,14 +28,14 @@ async def get_access_token(phone_number_id: str):
         
         # Check if token never expires
         if auth_data.get("token_never_expires", False) or auth_data.get("expires_at", 0) == 0:
-            print("Token never expires, no refresh needed")
+            logger.debug("WhatsApp token marked non-expiring")
             return auth_data["access_token"]
         
         # Calculate remaining time
         remaining_seconds = max(0, auth_data["expires_at"] - int(time.time()))
         remaining_days = remaining_seconds // 86400
         accesstoken = auth_data["access_token"]
-        print(f"Token expires in {remaining_days} days")
+        logger.debug("WhatsApp token expires in %s days", remaining_days)
         
         # Refresh if less than 7 days remain
         if remaining_days <= 30:
@@ -46,8 +48,6 @@ async def get_access_token(phone_number_id: str):
                     app_id=auth_data["app_id"],
                     app_secret=auth_data["app_secret"]
                 )
-                
-                print(f"Token refresh result: {result}")
                 
                 if not result or "access_token" not in result:
                     raise ValueError("Token refresh failed")
@@ -70,7 +70,7 @@ async def get_access_token(phone_number_id: str):
                 # Update redis
                 await redis_client.set(statekey, json.dumps(auth_data))
                 
-                print(f"Token refreshed successfully")
+                logger.info("WhatsApp access token refreshed for phone_number_id=%s", phone_number_id)
         
         return accesstoken
         

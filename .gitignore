@@ -9,4 +9,18 @@ private_token.txt
 
 # Virtual environments
 .venv
+
+# Secrets and local config
 .env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Type checker cache
+.mypy_cache/
+
+# Local dev scratch notes (may contain tokens)
+packages/**/_*.txt

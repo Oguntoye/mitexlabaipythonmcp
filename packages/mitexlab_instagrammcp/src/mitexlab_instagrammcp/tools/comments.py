@@ -161,7 +161,7 @@ async def reply_to_comment(
 
 # async def quickie():
 #     reuslt = await reply_to_comment(
-#         username="rankloid_",
+#         username="example_user",
 #         comment_id="18074014970143080",
 #         message="Nice having you"
 #         # caption="Img 101",
@@ -178,7 +178,7 @@ async def reply_to_comment(
 
 # async def quickie():
 #     reuslt = await fetch_all_comments(
-#         username="rankloid_",
+#         username="example_user",
 #         # caption="Img 101",
 #         # image_urls=[
 #         #     "https://res.cloudinary.com/tribapay/image/upload/v1756330478/Screenshot_2025-08-27_at_22.27.39_picvex.png",

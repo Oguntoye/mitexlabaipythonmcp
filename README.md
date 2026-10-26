@@ -39,7 +39,7 @@ There is no compile step. Python runs source directly via `uv`.
 
 ## Environment variables
 
-Create `.env` in the repo root. All packages read from the same file.
+Copy [`.env.example`](.env.example) to `.env` in the repo root. All packages read from the same file. See [SECURITY.md](SECURITY.md) for credential handling.
 
 ### Root (`src/env.py`)
 

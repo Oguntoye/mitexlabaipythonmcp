@@ -275,7 +275,7 @@ async def publish_reel(
 
 # async def quickie():
 #     reuslt = await publish_carousel(
-#         username="rankloid_",
+#         username="example_user",
 #         # caption="Img 101",
 #         image_urls=[
 #             "https://res.cloudinary.com/tribapay/image/upload/v1756330478/Screenshot_2025-08-27_at_22.27.39_picvex.png",

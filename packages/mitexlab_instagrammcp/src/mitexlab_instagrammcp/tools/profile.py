@@ -48,7 +48,7 @@ async def get_user_profile( username: str) -> str:
 
 
 # async def quickie():
-#     reuslt = await get_user_profile("rankloid_")
+#     reuslt = await get_user_profile("example_user")
 #     print(f"reuslt: {reuslt}")
 
 # if __name__ == "__main__":

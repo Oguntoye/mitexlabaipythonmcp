@@ -35,6 +35,8 @@ jobs:
             -x ".mypy_cache/*" \
             -x "**/__pycache__/*" \
             -x "**/*.pyc" \
+            -x ".env" \
+            -x ".env.*" \
             -x "private_token.txt"
 
       - name: Set release id
